@@ -45,15 +45,23 @@ pub struct RobotRename {
 impl Default for RobotRename {
     fn default() -> Self {
         Self {
-            name: format!("Bob"),
-            number_string: format!("0"),
-            number: Ok(0),
-            password: format!("password"),
+            name: String::new(),
+            number_string: String::new(),
+            number: parse_robot_number(""),
+            password: if can_customize_password() { String::new() } else { format!("password") },
             github_link: Url::from_str("https://github.com/Cerulity64X/robot_rename")
                 .expect("GitHub link was invalid!"),
             //show_command: false,
             clip: ClipboardProvider::new().unwrap(),
         }
+    }
+}
+fn parse_robot_number(st: &str) -> Result<i128, String> {
+    match st.parse::<i128>() {
+        Err(e) => Err(format!("Could not parse robot number ({:?}).", e.kind())),
+        Ok(n) if n > 9999 => Err(format!("Robot number too large (>9999).")),
+        Ok(n) if n < 0 => Err(format!("Robot number must be above zero.")),
+        Ok(n) => Ok(n)
     }
 }
 impl App for RobotRename {
@@ -74,12 +82,7 @@ impl App for RobotRename {
             ui.horizontal(|ui| {
                 ui.label("Number");
                 if ui.text_edit_singleline(&mut self.number_string).changed() {
-                    self.number = match self.number_string.parse::<i128>() {
-                        Err(e) => Err(format!("Could not parse robot number ({:?}).", e.kind())),
-                        Ok(n) if n > 9999 => Err(format!("Robot number too large (>9999).")),
-                        Ok(n) if n < 0 => Err(format!("Robot number must be above zero.")),
-                        Ok(n) => Ok(n)
-                    };
+                    self.number = parse_robot_number(&self.number_string);
                 }
 
             });
